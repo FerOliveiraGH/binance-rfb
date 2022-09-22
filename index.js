@@ -1,7 +1,7 @@
 require('dotenv-safe').config();
 
-const { depositos } = require("./src/depositos");
-const { saques } = require("./src/saques");
+const { transferencia } = require("./src/transferencia");
+const { retirada } = require("./src/retirada");
 const { compraVenda } = require("./src/compra_venda");
 const { permuta } = require("./src/permuta");
 const { saveRfbFile } = require("./src/utilities");
@@ -13,13 +13,17 @@ async function load() {
 
     let file = "";
 
-    file += await depositos(year, month);
-    file += await saques(year, month);
-    file += await compraVenda('ETH', year, month);
-    file += await compraVenda('BTC', year, month);
-    file += await compraVenda('BUSD', year, month);
-    file += await permuta('ETH', 'BUSD', year, month)
-    file += await permuta('BTC', 'BUSD', year, month)
+    let symbolsCompraVenda = ['ETH', 'BTC', 'BUSD'];
+
+    let symbolsPermuta = [
+        ['ETH', 'BUSD'],
+        ['BTC', 'BUSD'],
+    ];
+
+    file += await compraVenda(symbolsCompraVenda, year, month);
+    file += await permuta(symbolsPermuta, year, month)
+    file += await transferencia(year, month);
+    file += await retirada(year, month);
 
     await saveRfbFile(year, month, file);
 }

@@ -41,11 +41,11 @@ async function privateCall(path, data = {}, method = 'GET') {
     if (!apiKey || !apiSecret)
         throw new Error('Preencha corretamente sua API KEY e SECRET KEY');
 
-    const timestamp = Date.now();
-    const recvWindow = 60000;//máximo permitido, default 5000
-
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
     await delay(200);
+
+    const timestamp = Date.now();
+    const recvWindow = 60000;//máximo permitido, default 5000
 
     const signature = crypto
         .createHmac('sha256', apiSecret)

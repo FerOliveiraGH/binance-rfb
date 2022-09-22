@@ -5,7 +5,7 @@ const { myWithdraw } = require('./api.js');
 const { getStarDate, getEndDate } = require("./utilities");
 
 
-async function saques(year = 2022, month = 8) {
+async function retirada(year = 2022, month = 8) {
     const taxEx = new Exchange({
         exchange_name: 'Binance', // Exchange Name
         exchange_country: 'US', // Exchange CNPJ
@@ -45,4 +45,4 @@ async function saques(year = 2022, month = 8) {
    return await taxEx.exportFile();
 }
 
-module.exports  = { saques }
+module.exports  = { retirada }

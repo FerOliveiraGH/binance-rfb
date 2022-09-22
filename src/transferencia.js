@@ -5,7 +5,7 @@ const { myDeposits } = require('./api.js');
 const { getStarDate, getEndDate } = require("./utilities");
 
 
-async function depositos(year = 2022, month = 8) {
+async function transferencia(year = 2022, month = 8) {
     const taxEx = new Exchange({
         exchange_name: 'Binance', // Exchange Name
         exchange_country: 'US', // Exchange CNPJ
@@ -36,6 +36,8 @@ async function depositos(year = 2022, month = 8) {
 
                 coin_symbol: element.coin,
                 coin_quantity: element.amount,
+
+                origin_wallet: element.address
             }
 
             await taxEx.addDepositOperation(deposit);
@@ -45,4 +47,4 @@ async function depositos(year = 2022, month = 8) {
    return await taxEx.exportFile();
 }
 
-module.exports  = { depositos }
+module.exports  = { transferencia }

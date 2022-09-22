@@ -5,7 +5,7 @@ const { myTrades } = require('./api.js');
 const { getStarDate, getEndDate } = require("./utilities");
 
 
-async function permuta(symbol1 = 'ETH', symbol2 = 'BUSD', year = 2022, month = 8) {
+async function permuta(symbols = [['ETH','BUSD']], year = 2022, month = 8) {
     const taxEx = new Exchange({
         exchange_name: 'Binance', // Exchange Name
         exchange_country: 'US', // Exchange CNPJ
@@ -18,46 +18,51 @@ async function permuta(symbol1 = 'ETH', symbol2 = 'BUSD', year = 2022, month = 8
     let startDay = dateStart.getDate();
     let endDay = dateEnd.getDate();
 
-    for (let i=startDay; i <= endDay; i++) {
-        let dateTradesStart = new Date(dateStart.getFullYear(), dateStart.getMonth(), i, 0, 0, 0);
-        let dateTradesEnd = new Date(dateEnd.getFullYear(), dateEnd.getMonth(), i, 23, 59, 59);
-        dateTradesStart = dateTradesStart.getTime();
-        dateTradesEnd = dateTradesEnd.getTime();
+    for (let pairItem of symbols) {
+        let symbol1 = pairItem[0];
+        let symbol2 = pairItem[1];
 
-        let pair = symbol1.toUpperCase()+symbol2.toUpperCase();
+        for (let i = startDay; i <= endDay; i++) {
+            let dateTradesStart = new Date(dateStart.getFullYear(), dateStart.getMonth(), i, 0, 0, 0);
+            let dateTradesEnd = new Date(dateEnd.getFullYear(), dateEnd.getMonth(), i, 23, 59, 59);
+            dateTradesStart = dateTradesStart.getTime();
+            dateTradesEnd = dateTradesEnd.getTime();
 
-        let response = await myTrades(pair, dateTradesStart, dateTradesEnd);
+            let pair = symbol1.toUpperCase() + symbol2.toUpperCase();
 
-        for (let element of response) {
-            let trade = {};
-            let dateTrade = new Date(element.time);
+            let response = await myTrades(pair, dateTradesStart, dateTradesEnd);
 
-            if (element.isBuyer) {
-                trade = {
-                    date: `${dateTrade.getDate()}/${dateTrade.getMonth()+1}/${dateTrade.getFullYear()}`,
-                    //brl_fees: '00', // Fees is optional
+            for (let element of response) {
+                let trade = {};
+                let dateTrade = new Date(element.time);
 
-                    received_coin_symbol: symbol1,
-                    received_coin_quantity: element.qty,
+                if (element.isBuyer) {
+                    trade = {
+                        date: `${dateTrade.getDate()}/${dateTrade.getMonth() + 1}/${dateTrade.getFullYear()}`,
+                        //brl_fees: '00', // Fees is optional
 
-                    delivered_coin_symbol: symbol2,
-                    delivered_coin_quantity: element.quoteQty,
+                        received_coin_symbol: symbol1,
+                        received_coin_quantity: element.qty,
+
+                        delivered_coin_symbol: symbol2,
+                        delivered_coin_quantity: element.quoteQty,
+                    }
+
+                    await taxEx.addPermutationOperation(trade);
+                } else if (!element.isBuyer) {
+                    trade = {
+                        date: `${dateTrade.getDate()}/${dateTrade.getMonth() + 1}/${dateTrade.getFullYear()}`,
+                        //brl_fees: '00', // Fees is optional
+
+                        received_coin_symbol: symbol2,
+                        received_coin_quantity: element.quoteQty,
+
+                        delivered_coin_symbol: symbol1,
+                        delivered_coin_quantity: element.qty,
+                    }
+
+                    await taxEx.addPermutationOperation(trade);
                 }
-
-                await taxEx.addPermutationOperation(trade);
-            } else if (!element.isBuyer) {
-                trade = {
-                    date: `${dateTrade.getDate()}/${dateTrade.getMonth()+1}/${dateTrade.getFullYear()}`,
-                    //brl_fees: '00', // Fees is optional
-
-                    received_coin_symbol: symbol2,
-                    received_coin_quantity: element.quoteQty,
-
-                    delivered_coin_symbol: symbol1,
-                    delivered_coin_quantity: element.qty,
-                }
-
-                await taxEx.addPermutationOperation(trade);
             }
         }
     }

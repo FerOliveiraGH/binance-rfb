@@ -5,7 +5,7 @@ const { myTrades } = require('./api.js');
 const { getStarDate, getEndDate } = require("./utilities");
 
 
-async function compraVenda(symbol = 'ETH', year = 2022, month = 8) {
+async function compraVenda(symbols = ['ETH'], year = 2022, month = 8) {
     const taxEx = new Exchange({
         exchange_name: 'Binance', // Exchange Name
         exchange_country: 'US', // Exchange CNPJ
@@ -19,49 +19,51 @@ async function compraVenda(symbol = 'ETH', year = 2022, month = 8) {
     let endDay = dateEnd.getDate();
     let symbol2 = 'BRL'
 
-    for (let i=startDay; i <= endDay; i++) {
-        let dateTradesStart = new Date(dateStart.getFullYear(), dateStart.getMonth(), i, 0, 0, 0);
-        let dateTradesEnd = new Date(dateEnd.getFullYear(), dateEnd.getMonth(), i, 23, 59, 59);
-        dateTradesStart = dateTradesStart.getTime();
-        dateTradesEnd = dateTradesEnd.getTime();
+    for (let symbol of symbols) {
+        for (let i = startDay; i <= endDay; i++) {
+            let dateTradesStart = new Date(dateStart.getFullYear(), dateStart.getMonth(), i, 0, 0, 0);
+            let dateTradesEnd = new Date(dateEnd.getFullYear(), dateEnd.getMonth(), i, 23, 59, 59);
+            dateTradesStart = dateTradesStart.getTime();
+            dateTradesEnd = dateTradesEnd.getTime();
 
-        let pair = symbol.toUpperCase()+symbol2.toUpperCase();
+            let pair = symbol.toUpperCase() + symbol2.toUpperCase();
 
-        let response = await myTrades(pair, dateTradesStart, dateTradesEnd);
+            let response = await myTrades(pair, dateTradesStart, dateTradesEnd);
 
-        for (let element of response) {
-            let trade = {};
-            let dateTrade = new Date(element.time);
+            for (let element of response) {
+                let trade = {};
+                let dateTrade = new Date(element.time);
 
-            if (element.isBuyer) {
-                trade = {
-                    date: `${dateTrade.getDate()}/${dateTrade.getMonth()+1}/${dateTrade.getFullYear()}`,
+                if (element.isBuyer) {
+                    trade = {
+                        date: `${dateTrade.getDate()}/${dateTrade.getMonth() + 1}/${dateTrade.getFullYear()}`,
 
-                    brl_value: element.quoteQty,
-                    brl_fees: element.commission,
+                        brl_value: element.quoteQty,
+                        brl_fees: element.commission,
 
-                    coin_symbol: symbol,
-                    coin_quantity: element.qty,
+                        coin_symbol: symbol,
+                        coin_quantity: element.qty,
+                    }
+
+                    await taxEx.addBuyOperation(trade);
+                } else if (!element.isBuyer) {
+                    trade = {
+                        date: `${dateTrade.getDate()}/${dateTrade.getMonth() + 1}/${dateTrade.getFullYear()}`,
+
+                        brl_value: element.quoteQty,
+                        brl_fees: element.commission,
+
+                        coin_symbol: symbol,
+                        coin_quantity: element.qty,
+                    }
+
+                    await taxEx.addSellOperation(trade);
                 }
-
-                await taxEx.addBuyOperation(trade);
-            } else if (!element.isBuyer) {
-                trade = {
-                    date: `${dateTrade.getDate()}/${dateTrade.getMonth()+1}/${dateTrade.getFullYear()}`,
-
-                    brl_value: element.quoteQty,
-                    brl_fees: element.commission,
-
-                    coin_symbol: symbol,
-                    coin_quantity: element.qty,
-                }
-
-                await taxEx.addSellOperation(trade);
             }
         }
     }
 
-   return await taxEx.exportFile();
+   return taxEx.exportFile();
 }
 
 module.exports  = { compraVenda }
